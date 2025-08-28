@@ -20,7 +20,7 @@ A Django REST API with **OTP-based authentication** (email or mobile), **JWT tok
 
 ### 1. Clone the repo
 ```bash
-git clone <your-repo-url>
-cd <repo-folder>
+git https://github.com/RispaJoseph/Bookstore-.git
+cd Bookstore
 
 
