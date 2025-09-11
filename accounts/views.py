@@ -5,6 +5,11 @@ from rest_framework import status
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from books.serializers import OrderSerializer
+from books.models import Order
+from books.serializers import BookSerializer
+from django.shortcuts import get_object_or_404
 
 from .models import OTP
 from .serializers import RequestOTPSerializer, VerifyOTPSerializer
@@ -87,3 +92,29 @@ class VerifyOTPView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class MyOrdersView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        orders = Order.objects.filter(user=request.user).order_by("-created_at")
+
+        data = []
+        for o in orders:
+            data.append({
+                "id": o.id,
+                "book": {
+                    "id": o.book.id,
+                    "title": o.book.title,
+                    "author": o.book.author,
+                    "price": o.book.price,
+                },
+                "amount": o.amount,
+                "status": o.status,
+                "razorpay_order_id": o.razorpay_order_id,
+                "razorpay_payment_id": o.razorpay_payment_id,
+                "created_at": o.created_at,
+            })
+
+        return Response(data, status=status.HTTP_200_OK)    

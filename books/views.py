@@ -1,8 +1,14 @@
-from rest_framework import viewsets, permissions, filters
-from rest_framework.permissions import SAFE_METHODS
+from rest_framework import viewsets, permissions, filters, status
+from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Book
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.conf import settings
+from django.shortcuts import get_object_or_404
+import razorpay
+
+from .models import Book, Order
 from .serializers import BookSerializer
 
 class ReadOnlyOrAuth(permissions.BasePermission):
@@ -24,3 +30,67 @@ class BookViewSet(viewsets.ModelViewSet):
     filterset_fields = ["author", "published_year"]
     search_fields = ["title", "author"]
     ordering_fields = ["id", "published_year", "price", "title"]
+
+    client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+    @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
+    def create_order(self, request, pk=None):
+        """Create Razorpay order for this book"""
+        book = self.get_object()
+        amount = int(book.price * 100)  
+        try:
+            razor_order = self.client.order.create({
+                "amount": amount,
+                "currency": "INR",
+                "payment_capture": 1,
+            })
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        order = Order.objects.create(
+            user=request.user,
+            book=book,
+            razorpay_order_id=razor_order.get("id"),
+            amount=amount,
+            status="created"
+        )
+        return Response({
+            "order_id": razor_order.get("id"),
+            "amount": amount,  
+            "display_amount": book.price,  
+            "currency": "INR",
+            "key": settings.RAZORPAY_KEY_ID,
+            "book": {
+                "id": book.id,
+                "title": book.title,
+                "author": book.author,
+                "price": book.price
+            }
+        })
+
+
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def verify_payment(self, request):
+        """Verify Razorpay payment after checkout"""
+        data = request.data
+        params = {
+            "razorpay_order_id": data.get("razorpay_order_id"),
+            "razorpay_payment_id": data.get("razorpay_payment_id"),
+            "razorpay_signature": data.get("razorpay_signature"),
+        }
+        try:
+            self.client.utility.verify_payment_signature(params)
+        except razorpay.errors.SignatureVerificationError:
+            order = Order.objects.filter(razorpay_order_id=params["razorpay_order_id"]).first()
+            if order:
+                order.status = "failed"
+                order.save()
+            return Response({"detail": "Signature verification failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = get_object_or_404(Order, razorpay_order_id=params["razorpay_order_id"])
+        order.razorpay_payment_id = params["razorpay_payment_id"]
+        order.razorpay_signature = params["razorpay_signature"]
+        order.status = "paid"
+        order.save()
+
+        return Response({"detail": "Payment verified", "order_id": order.id})
