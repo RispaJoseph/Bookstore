@@ -3,8 +3,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from .views import RequestOTPView, VerifyOTPView, MyOrdersView
 
 urlpatterns = [
-    path("request-otp", RequestOTPView.as_view(), name="request-otp"),
-    path("verify-otp", VerifyOTPView.as_view(), name="verify-otp"),
+    path("request-otp", RequestOTPView.as_view(), name="request-otp"),  
+    path("verify-otp", VerifyOTPView.as_view(), name="verify-otp"),     
     path("refresh-token", TokenRefreshView.as_view(), name="refresh-token"),
     path("me/orders", MyOrdersView.as_view(), name="my-orders"),
 ]

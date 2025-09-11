@@ -76,17 +76,17 @@ export default function BookList() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className={`px-4 py-2 rounded-lg transition ${
+            className={
               page === 1
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                : "bg-gray-200 hover:bg-gray-300 text-gray-700"
-            }`}
+                ? "px-4 py-2 rounded-lg transition bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "px-4 py-2 rounded-lg transition bg-gray-200 hover:bg-gray-300 text-gray-700"
+            }
           >
             Prev
           </button>
           <span className="text-gray-700 font-medium">{page}</span>
           <button
-            onClick={() => setPage((p) => p + 1)}  
+            onClick={() => setPage((p) => p + 1)}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
           >
             Next

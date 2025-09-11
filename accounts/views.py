@@ -3,16 +3,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
-from books.serializers import OrderSerializer
 from books.models import Order
-from books.serializers import BookSerializer
-from django.shortcuts import get_object_or_404
+from django.conf import settings
 
 from .models import OTP
 from .serializers import RequestOTPSerializer, VerifyOTPSerializer
+from .utils import send_otp_email, send_otp_sms  # ✅ use helpers
 
 User = get_user_model()
 
@@ -21,24 +19,41 @@ class RequestOTPView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print("👉 Incoming payload:", request.data)
         serializer = RequestOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get("email")
         mobile = serializer.validated_data.get("mobile")
 
-        
+        # Generate 6-digit OTP
         code = f"{random.randint(0, 999999):06d}"
 
+        # Save in DB
         otp = OTP.objects.create(email=email, mobile=mobile, code=code)
 
-        
-        target = email or mobile
-        print(f"[OTP] To: {target} Code: {code} Expires: {otp.expires_at.isoformat()}")
+        # Decide where to send
+        try:
+            if email:
+                send_otp_email(email, code)
+                target = email
+            elif mobile:
+                send_otp_sms(mobile, code)
+                target = mobile
+            else:
+                return Response(
+                    {"detail": "Either email or mobile is required"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        return Response(
-            {"message": "OTP generated and sent (console log)", "target": target},
-            status=status.HTTP_200_OK,
-        )
+            return Response(
+                {"message": "OTP sent successfully", "target": target},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Error sending OTP: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class VerifyOTPView(APIView):
@@ -51,6 +66,7 @@ class VerifyOTPView(APIView):
         mobile = serializer.validated_data.get("mobile")
         otp_code = serializer.validated_data["otp"]
 
+        # Filter OTP
         qs = OTP.objects.filter(code=otp_code, is_used=False)
         if email:
             qs = qs.filter(email=email)
@@ -64,23 +80,22 @@ class VerifyOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        
+        # Mark OTP as used
         otp.is_used = True
         otp.save(update_fields=["is_used"])
 
-        
+        # Get or create user
         username = email or mobile
         user, created = User.objects.get_or_create(
             username=username,
             defaults={"email": email or ""},
         )
 
-        
         if email and not user.email:
             user.email = email
             user.save(update_fields=["email"])
 
-        
+        # Issue JWT tokens
         refresh = RefreshToken.for_user(user)
         access = refresh.access_token
 
@@ -117,4 +132,4 @@ class MyOrdersView(APIView):
                 "created_at": o.created_at,
             })
 
-        return Response(data, status=status.HTTP_200_OK)    
+        return Response(data, status=status.HTTP_200_OK)

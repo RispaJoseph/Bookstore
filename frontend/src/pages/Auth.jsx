@@ -26,6 +26,8 @@ export default function Auth() {
         return;
       }
 
+      console.log("👉 Payload being sent:", payload);
+
       await requestOtp(payload);
       setStage("verify");
     } catch (err) {
