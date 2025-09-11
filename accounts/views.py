@@ -10,7 +10,7 @@ from django.conf import settings
 
 from .models import OTP
 from .serializers import RequestOTPSerializer, VerifyOTPSerializer
-from .utils import send_otp_email, send_otp_sms  # ✅ use helpers
+from .utils import send_otp_email, send_otp_sms  
 
 User = get_user_model()
 
@@ -19,7 +19,7 @@ class RequestOTPView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print("👉 Incoming payload:", request.data)
+        # print("👉 Incoming payload:", request.data)
         serializer = RequestOTPSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data.get("email")
