@@ -1,16 +1,37 @@
 # 📚 Bookstore
 
-A Django REST API with **OTP-based authentication**, **JWT tokens**, and **Book CRUD** using PostgreSQL.
+A full-stack Bookstore app with **Django REST API**, **React frontend**, and **Supabase Postgres**.  
+Features OTP-based authentication (Email/SMS via Twilio), JWT tokens, Razorpay integration, and book ordering.
 
 ---
 
 ## 🚀 Features
-- OTP authentication   
-- JWT Access  
-- Books CRUD:
+- **Authentication**
+  - OTP via Email (SMTP) or SMS (Twilio)
+  - JWT Access & Refresh tokens
+- **Books CRUD**
   - Public: `GET /books/`, `GET /books/{id}/`
-  - Auth only: `POST`, `PUT`, `DELETE`  
-- Search, filter, ordering, and pagination  
+  - Authenticated: `POST`, `PUT`, `DELETE`
+- **Orders & Payments**
+  - Create order with Razorpay
+  - Verify payments
+- **Extras**
+  - Search, pagination
+  
+
+---
+
+## 🛠️ Tech Stack
+- **Backend:** Django REST Framework, PostgreSQL (Supabase), JWT
+- **Frontend:** React, Redux, Tailwind, Netlify
+- **DevOps:** Render (Backend), Netlify (Frontend)
+- **3rd Party:** Razorpay API, Twilio SMS, Gmail SMTP
+
+---
+
+## 🌐 Live Demo
+- Frontend: [rispa-bookstore.netlify.app](https://rispa-bookstore.netlify.app/)
+- Backend: [bookstore-kaoi.onrender.com](https://bookstore-kaoi.onrender.com/)
 
 ---
 
@@ -18,71 +39,56 @@ A Django REST API with **OTP-based authentication**, **JWT tokens**, and **Book 
 
 ### 1. Clone the repo
 ```bash
-git https://github.com/RispaJoseph/Bookstore.git
+git clone https://github.com/RispaJoseph/Bookstore.git
 cd Bookstore
 ```
 
 ### 2. Virtual environment
-
 ```bash
-# Create venv
 python3 -m venv .venv
-```
-
-```bash
-# Activate (Linux/macOS)
-source .venv/bin/activate    # For Windows:   .venv\Scripts\activate
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 ```
 
 ### 3. Install dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. PostgreSQL setup
-Create DB + user:
-
-```bash
-sudo -i -u postgres
-CREATE DATABASE otpbooks;
-CREATE USER otpuser WITH PASSWORD 'otppassword';
-GRANT ALL PRIVILEGES ON DATABASE otpbooks TO otpuser;
-```
-
-### 5. Environment file
-Create .env in project root:
-
+### 4. Environment variables
+Create a .env in the project root:
 ```ini
+# Django
 SECRET_KEY=change-me
 DEBUG=True
 
-DB_NAME=otpbooks
-DB_USER=otpuser
-DB_PASSWORD=otppassword
-DB_HOST=localhost
-DB_PORT=5432
+# Database (Supabase)
+SUPABASE_DB_URL=postgresql://postgres:password@host:5432/postgres
 
-OTP_EXPIRY_MINUTES=5
-ACCESS_TOKEN_LIFETIME_MIN=15
-REFRESH_TOKEN_LIFETIME_DAYS=7
+# Email (Gmail SMTP)
+EMAIL_HOST_USER=your@gmail.com
+EMAIL_HOST_PASSWORD=app-password
+
+# Twilio (SMS OTP)
+TWILIO_ACCOUNT_SID=ACxxxxxxxx
+TWILIO_AUTH_TOKEN=xxxxxxxx
+TWILIO_PHONE_NUMBER=+1234567890
+
+# Razorpay
+RAZORPAY_KEY_ID=rzp_test_xxxxxxxx
+RAZORPAY_KEY_SECRET=xxxxxxxx
+
 ```
 
-
-### 6. Apply migrations & run
-
+### 5. Apply migrations & run
 ```bash
 python manage.py migrate
 python manage.py runserver
 ```
 
-### 7. Run server
-
+### 6. Running frontend
 ```bash
-python manage.py runserver
+cd frontend
+npm install
+npm run dev
 ```
-
-
-
-
 
