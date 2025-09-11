@@ -10,3 +10,4 @@ razorpay>=1.4
 gunicorn>=21.2
 dj-database-url>=2.1
 whitenoise>=6.6
+setuptools>=75.0
