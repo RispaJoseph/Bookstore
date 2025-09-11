@@ -41,7 +41,7 @@ export default function BookForm({ editMode = false }) {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-lg bg-white rounded-xl shadow-md p-8">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
-          {editMode ? "✏️ Edit Book" : "Add New Book"}
+          {editMode ? "Edit Book" : "Add New Book"}
         </h2>
 
         <form onSubmit={onSubmit} className="space-y-4">
